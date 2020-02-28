@@ -6,20 +6,24 @@ from tornado.wsgi import WSGIContainer
 
 app = Flask(__name__, instance_relative_config=True)
 
-@app.route('/invoke', methods=['GET'])
-def test():
-    module = request.args.get('module')
-    function = request.args.get('function')
+@app.route('/invoke', methods=['POST'])
+def get_invoke():
+    m = request.args.get('m')
+    f = request.args.get('f')
 
-    print(f'module={module}')
-    print(f'function={function}')
+    scope = request.get_json(force=True)
 
-    scope = {}
-    exec(f'import {module}', scope)
-    result = eval(f'{module}.{function}()', scope)
+    scope = {
+        'm': m,
+        'f': f,
+        'args': [],
+        'kwargs': {},
+        **scope
+    }
 
+    result = eval(f'getattr(__import__(m), f)(*args, **kwargs)', scope)
     return jsonify(result)
-    
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
